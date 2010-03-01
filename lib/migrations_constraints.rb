@@ -43,9 +43,9 @@ module ActiveRecord
         @columns << column unless @columns.include? column
         
         # Add constraints to this column as specified
-        constraint :unique, column if options[:unique]
-        constraint :foreign_key, column, :references => options[:references] if options[:references]
-        constraint :check, column, :check => options[:check] if options[:check]
+        constraint :unique, column, constraint_options(:unique, options)          if options[:unique]
+        constraint :foreign_key, column, constraint_options(:references, options) if options[:references]
+        constraint :check, column, constraint_options(:check, options)            if options[:check]
         self
       end
       
@@ -58,6 +58,17 @@ module ActiveRecord
         end
         
         self
+      end
+      
+      def constraint_options (type, options = {})
+        # added to support named foreign key constraints if default name is too long
+        new_options = {}
+        new_options[:name] = options[:name] if options[:name]
+        case type
+        when :references, :check
+          new_options[type] = options[type] if options[type]
+        end
+        new_options
       end
       
       def to_sql
