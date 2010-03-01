@@ -77,7 +77,7 @@ module ActiveRecord
       end
       
       def to_sql
-       (@columns + @constraints.map(&:to_sql)) * ', '
+       (@columns + @constraints).map(&:to_sql) * ', '
       end
       
       protected
