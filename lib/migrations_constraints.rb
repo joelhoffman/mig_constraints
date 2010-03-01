@@ -33,14 +33,19 @@ module ActiveRecord
       end
       
       def column(name, type, options = {})
-        # Next 7 lines copied directly from ActiveRecord 1.15.3
+        # copied directly from ActiveRecord 2.3.5
         column = self[name] || ColumnDefinition.new(@base, name, type)
-        column.limit = options[:limit] || native[type.to_sym][:limit] if options[:limit] or native[type.to_sym]
+        if options[:limit]
+          column.limit = options[:limit]
+        elsif native[type.to_sym].is_a?(Hash)
+          column.limit = native[type.to_sym][:limit]
+        end
         column.precision = options[:precision]
         column.scale = options[:scale]
         column.default = options[:default]
         column.null = options[:null]
         @columns << column unless @columns.include? column
+        # end copied directly from ActiveRecord
         
         # Add constraints to this column as specified
         constraint :unique, column, constraint_options(:unique, options)          if options[:unique]
