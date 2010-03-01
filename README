@@ -1,4 +1,4 @@
-= MigrationsConstraints
+# Migrations Constraints
 
 MigrationsConstraints adds the capability to add/drop table constraints or 
 specify column constraints during table creation time to 
@@ -32,21 +32,21 @@ It currently supports the following:
   add_constraint :line_items, :name => 'line_items_max_quantity_check', :check => 'quantity < 10000'
   drop_constraint :line_items, :name => 'line_items_max_quantity_check'
 
-== ConstraintNaming
+## Constraint Naming
 
 Constraints by default are named according to the default naming convention used
 by PostgreSQL 8.2.x. That is for a given table +table+, column +column+:
 
- * A unique constraint is named +table_column_uq+.
- * A foreign key constraint is named +table_column_fkey+.
- * A check constraint is named +table_column_check+.
+* A unique constraint is named +table_column_uq+.
+* A foreign key constraint is named +table_column_fkey+.
+* A check constraint is named +table_column_check+.
 
 Otherwise, a constraint's name can be specified explicitly via the +:name+
 parameter:
 
   add_constraint :books, :foreign_key => :author_id, :references => :authors, :name => 'books_authors_fkey'
 
-== Release Notes
+## Release Notes
 
 MigrationsConstraints is currently being developed and tested using a PostgreSQL
 8.2 database back-end.
@@ -54,3 +54,7 @@ MigrationsConstraints is currently being developed and tested using a PostgreSQL
 If the database you're using doesn't follow the same (ANSI SQL 92) data
 definition language for specifying database constraints, then please support
 this project by contributing to the code. :)
+
+## History
+
+[Alistair A. Israel](http://alistairisrael.wordpress.com/) created this plugin in 2007 ([see the RubyForge project](http://rubyforge.org/projects/mig-constraints/)).
