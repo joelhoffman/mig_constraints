@@ -45,7 +45,6 @@ module ActiveRecord
         column.default = options[:default]
         column.null = options[:null]
         @columns << column unless @columns.include? column
-        # end copied directly from ActiveRecord
         
         # Add constraints to this column as specified
         constraint :unique, column, constraint_options(:unique, options)          if options[:unique]
@@ -54,6 +53,11 @@ module ActiveRecord
         self
       end
       
+      def references(table_name, options = {})
+        column_name = (ActiveRecord::Base.pluralize_table_names ? table_name.to_s.singularize : table_name) + '_id'
+        column column_name, :integer, {:null => false, :references => table_name}.merge(options)
+      end
+
       def constraint(type, column, options = {})
         if constraint = find_constraint_by_name(options[:name])     
           constraint.options.merge(options)
@@ -64,22 +68,28 @@ module ActiveRecord
         
         self
       end
-      
+
       def constraint_options (type, options = {})
         # added to support named foreign key constraints if default name is too long
         new_options = {}
         new_options[:name] = options[:name] if options[:name]
         case type
-        when :references, :check
+        when :references
+          [type, :cascade, :deferrable, :initially].each do |t|
+            new_options[t] = options[t] if options[t]
+          end
+        when :check
           new_options[type] = options[type] if options[type]
         end
         new_options
       end
       
-      def to_sql
-       (@columns + @constraints).map(&:to_sql) * ', '
+      def to_sql_with_constraints
+        ([to_sql_without_constraints] + @constraints.map(&:to_sql)) * ', '
       end
       
+      alias_method_chain :to_sql, :constraints
+
       protected
       
       def find_constraint_by_name(name)
@@ -110,6 +120,17 @@ module ActiveRecord
             definition = "FOREIGN KEY (#{quoted_column_names}) REFERENCES #{references[:table]} (#{quote_column_name(references[:column])})"
           else
             definition = "FOREIGN KEY (#{quoted_column_names}) REFERENCES #{references} (#{quote_column_name('id')})"
+          end
+
+          if options[:cascade]
+            definition += ' ON DELETE CASCADE'
+          end
+
+          if options[:deferrable]
+            definition += ' DEFERRABLE'
+            if options[:initially]
+              definition += ' INITIALLY ' + options[:initially]
+            end
           end
         when :check
           if check = options[:check]
@@ -165,15 +186,16 @@ module ActiveRecord
         name = options[:name] || case
         when options[:unique]
           default_constraint_name(table_name, :unique, options[:unique])
+          execute "ALTER TABLE #{table_name} DROP CONSTRAINT #{name}"
         when options[:foreign_key]
           default_constraint_name(table_name, :foreign_key, options[:foreign_key])
+          execute "ALTER TABLE #{table_name} DROP FOREIGN KEY #{name}"
         when options[:check]
           default_constraint_name(table_name, :check, options[:check])
+          execute "ALTER TABLE #{table_name} DROP CONSTRAINT #{name}"
         else
           raise "Unknown constraint type for #{options.inspect}!"
         end
-        
-        execute "ALTER TABLE #{table_name} DROP CONSTRAINT #{name}"
       end
     end
     
